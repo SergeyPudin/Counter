@@ -5,11 +5,12 @@ using UnityEngine.Events;
 public class Counter : MonoBehaviour
 {
     [SerializeField] private PlayerInput _input;
+    [SerializeField] private float _period = 1.0f;
 
     private int _counterValue = 0;
-    private int _pauseTime = 1;
     private bool _isCountOn = true;
     private Coroutine _count;
+    private float _elapsedTime = 0;
 
     public event UnityAction ValueChanged;
 
@@ -28,34 +29,33 @@ public class Counter : MonoBehaviour
     private void OnDisable()
     {
         _input.PressedButton -= ToggleCounter;
+
+        StopCoroutine(_count);
+    }
+
+    private void Update()
+    {
+        if (_elapsedTime >= _period)
+        {
+            _counterValue += 1;
+            ValueChanged?.Invoke();
+            _elapsedTime = 0;
+        }
     }
 
     public void ToggleCounter()
     {
-        if (_isCountOn)
-        {
-            StopCoroutine(_count);
-
-            _isCountOn = false;
-        }
-        else
-        {
-            _count = StartCoroutine(Count());
-
-            _isCountOn = true;
-        }
+        _isCountOn = !_isCountOn;
     }
 
     private IEnumerator Count()
     {
-        WaitForSeconds waitForSeconds = new WaitForSeconds(_pauseTime);
-
         while (true)
         {
-            _counterValue++;
-            ValueChanged?.Invoke();
+            if (_isCountOn)
+                _elapsedTime += Time.deltaTime;
 
-            yield return waitForSeconds;
+            yield return null;
         }
     }
 }
